@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meu Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="screen">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-icon">📅</div>
+        <h1 class="login-title">Meu Planner</h1>
+        <p class="login-sub">Organize sua vida com controle por voz</p>
+      </div>
+      <button class="google-btn" id="google-login-btn">
+        <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0">
+          <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
+          <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z"/>
+          <path fill="#FBBC05" d="M24 46c5.8 0 10.9-2 14.9-5.3l-6.9-5.7C29.9 37 27.1 38 24 38c-5.8 0-10.8-3.9-12.6-9.3l-7 5.4C8 40.1 15.4 46 24 46z"/>
+          <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-1 3-3.1 5.4-5.7 7l6.9 5.7C41.8 37.5 45 31.3 45 24c0-1.3-.2-2.7-.5-4z"/>
+        </svg>
+        Entrar com Google
+      </button>
+      <p class="login-note">Suas atividades ficam salvas na nuvem</p>
+    </div>
+  </div>
+
+  <!-- APP SCREEN -->
+  <div id="app-screen" class="screen hidden">
+    <div class="app-container">
+
+      <header class="app-header">
+        <div class="header-left">
+          <div class="app-title">Meu Planner</div>
+          <div class="app-date" id="app-date"></div>
+        </div>
+        <div class="header-right">
+          <div class="user-info" id="user-info">
+            <img id="user-avatar" src="" alt="" class="user-avatar" />
+            <span id="user-name" class="user-name"></span>
+          </div>
+          <button class="logout-btn" id="logout-btn" title="Sair">↩</button>
+        </div>
+      </header>
+
+      <div class="stats-row">
+        <div class="stat-card stat-total">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card stat-active">
+          <div class="stat-num" id="stat-active">0</div>
+          <div class="stat-label">Ativas</div>
+        </div>
+        <div class="stat-card stat-inactive">
+          <div class="stat-num" id="stat-inactive">0</div>
+          <div class="stat-label">Inativas</div>
+        </div>
+      </div>
+
+      <div class="voice-section">
+        <div class="voice-btn-area">
+          <button class="mic-btn" id="mic-btn" title="Clique para falar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <div class="voice-hint">
+            <strong>Controle por voz</strong>
+            <span>Clique e fale: "Adicionar reunião", "Inativar academia"</span>
+          </div>
+        </div>
+        <div class="transcript-box hidden" id="transcript-box"></div>
+        <div class="feedback-msg hidden" id="feedback-msg"></div>
+      </div>
+
+      <div class="filter-row" id="filter-row">
+        <button class="filter-btn active" data-filter="all">Todas</button>
+        <button class="filter-btn" data-filter="active">Ativas</button>
+        <button class="filter-btn" data-filter="inactive">Inativas</button>
+        <button class="filter-btn" data-filter="trabalho">Trabalho</button>
+        <button class="filter-btn" data-filter="saude">Saúde</button>
+        <button class="filter-btn" data-filter="pessoal">Pessoal</button>
+        <button class="filter-btn" data-filter="estudo">Estudo</button>
+      </div>
+
+      <div class="activity-list" id="activity-list">
+        <div class="loading-state">Carregando atividades...</div>
+      </div>
+
+      <div class="commands-hint">
+        <strong>Comandos de voz disponíveis</strong>
+        <ul>
+          <li><span class="cmd">"Adicionar reunião de trabalho às 14h"</span> — cadastra nova atividade</li>
+          <li><span class="cmd">"Inativar academia"</span> — inativa uma atividade pelo nome</li>
+          <li><span class="cmd">"Ativar academia"</span> — reativa uma atividade</li>
+          <li><span class="cmd">"Adicionar consulta médica categoria saúde"</span> — com categoria</li>
+          <li><span class="cmd">"Mostrar ativas"</span> / <span class="cmd">"Mostrar todas"</span> — filtra lista</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
