@@ -10,14 +10,12 @@
 </head>
 <body>
 
-  <!-- LOGIN SCREEN -->
+  <!-- LOGIN -->
   <div id="login-screen" class="screen">
     <div class="login-card">
-      <div class="login-brand">
-        <div class="login-icon">📅</div>
-        <h1 class="login-title">Meu Planner</h1>
-        <p class="login-sub">Organize sua vida com controle por voz</p>
-      </div>
+      <div class="login-icon">📅</div>
+      <h1 class="login-title">Meu Planner</h1>
+      <p class="login-sub">Organize sua vida com controle por voz</p>
       <button class="google-btn" id="google-login-btn">
         <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0">
           <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
@@ -31,7 +29,7 @@
     </div>
   </div>
 
-  <!-- APP SCREEN -->
+  <!-- APP -->
   <div id="app-screen" class="screen hidden">
     <div class="app-container">
 
@@ -41,29 +39,21 @@
           <div class="app-date" id="app-date"></div>
         </div>
         <div class="header-right">
-          <div class="user-info" id="user-info">
-            <img id="user-avatar" src="" alt="" class="user-avatar" />
-            <span id="user-name" class="user-name"></span>
-          </div>
-          <button class="logout-btn" id="logout-btn" title="Sair">↩</button>
+          <img id="user-avatar" src="" alt="" class="user-avatar" />
+          <span id="user-name" class="user-name"></span>
+          <button class="icon-btn" id="commands-btn" title="Comandos de voz">💬</button>
+          <button class="icon-btn logout-btn" id="logout-btn" title="Sair">↩</button>
         </div>
       </header>
 
+      <!-- STATS -->
       <div class="stats-row">
-        <div class="stat-card stat-total">
-          <div class="stat-num" id="stat-total">0</div>
-          <div class="stat-label">Total</div>
-        </div>
-        <div class="stat-card stat-active">
-          <div class="stat-num" id="stat-active">0</div>
-          <div class="stat-label">Ativas</div>
-        </div>
-        <div class="stat-card stat-inactive">
-          <div class="stat-num" id="stat-inactive">0</div>
-          <div class="stat-label">Inativas</div>
-        </div>
+        <div class="stat-card stat-total"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
+        <div class="stat-card stat-active"><div class="stat-num" id="stat-active">0</div><div class="stat-label">Ativas</div></div>
+        <div class="stat-card stat-inactive"><div class="stat-num" id="stat-inactive">0</div><div class="stat-label">Inativas</div></div>
       </div>
 
+      <!-- VOICE -->
       <div class="voice-section">
         <div class="voice-btn-area">
           <button class="mic-btn" id="mic-btn" title="Clique para falar">
@@ -76,42 +66,199 @@
           </button>
           <div class="voice-hint">
             <strong>Controle por voz</strong>
-            <span>Clique e fale: "Adicionar reunião", "Inativar academia"</span>
+            <span>Clique e fale — ou adicione manualmente</span>
           </div>
+          <button class="btn-add-new" id="btn-open-add">+ Nova atividade</button>
         </div>
         <div class="transcript-box hidden" id="transcript-box"></div>
         <div class="feedback-msg hidden" id="feedback-msg"></div>
       </div>
 
+      <!-- ADD FORM -->
+      <div class="add-form hidden" id="add-form">
+        <div class="add-form-header">
+          <span>Nova atividade</span>
+          <button class="add-form-close" id="add-form-close">✕</button>
+        </div>
+        <div class="add-form-body">
+          <div class="form-row">
+            <div class="form-field flex2">
+              <label>Nome *</label>
+              <input type="text" id="f-name" placeholder="Ex: Reunião de equipe" maxlength="80" />
+            </div>
+            <div class="form-field">
+              <label>Categoria</label>
+              <select id="f-category">
+                <option value="trabalho">Trabalho</option>
+                <option value="saude">Saúde</option>
+                <option value="pessoal">Pessoal</option>
+                <option value="estudo">Estudo</option>
+                <option value="lazer">Lazer</option>
+                <option value="viagem">Viagem</option>
+                <option value="shows">Shows</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label>Data</label>
+              <input type="date" id="f-date" />
+            </div>
+            <div class="form-field">
+              <label>Hora</label>
+              <input type="time" id="f-time" />
+            </div>
+            <div class="form-field flex2">
+              <label>Descrição</label>
+              <input type="text" id="f-desc" placeholder="Detalhes opcionais..." maxlength="200" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-cancel" id="btn-cancel-add">Cancelar</button>
+            <button class="btn-save" id="btn-save-add">Salvar atividade</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW CONTROLS -->
+      <div class="view-controls">
+        <div class="view-nav">
+          <button class="nav-arrow" id="nav-prev">‹</button>
+          <div class="nav-label" id="nav-label">Carregando...</div>
+          <button class="nav-arrow" id="nav-next">›</button>
+          <button class="nav-today" id="nav-today">Hoje</button>
+        </div>
+        <div class="view-modes">
+          <button class="view-mode-btn active" data-view="day">Dia</button>
+          <button class="view-mode-btn" data-view="week">Semana</button>
+          <button class="view-mode-btn" data-view="month">Mês</button>
+          <button class="view-mode-btn" data-view="year">Ano</button>
+          <button class="view-mode-btn" data-view="all">Todas</button>
+        </div>
+      </div>
+
+      <!-- CATEGORY FILTER -->
       <div class="filter-row" id="filter-row">
-        <button class="filter-btn active" data-filter="all">Todas</button>
-        <button class="filter-btn" data-filter="active">Ativas</button>
-        <button class="filter-btn" data-filter="inactive">Inativas</button>
+        <button class="filter-btn active" data-filter="all">Todas categorias</button>
         <button class="filter-btn" data-filter="trabalho">Trabalho</button>
         <button class="filter-btn" data-filter="saude">Saúde</button>
         <button class="filter-btn" data-filter="pessoal">Pessoal</button>
         <button class="filter-btn" data-filter="estudo">Estudo</button>
+        <button class="filter-btn" data-filter="lazer">Lazer</button>
+        <button class="filter-btn" data-filter="viagem">Viagem</button>
+        <button class="filter-btn" data-filter="shows">Shows</button>
       </div>
 
+      <!-- STATUS FILTER -->
+      <div class="status-filter-row">
+        <button class="status-btn active" data-status="all">Ativas e inativas</button>
+        <button class="status-btn" data-status="active">Só ativas</button>
+        <button class="status-btn" data-status="inactive">Só inativas</button>
+      </div>
+
+      <!-- ACTIVITY LIST -->
       <div class="activity-list" id="activity-list">
         <div class="loading-state">Carregando atividades...</div>
-      </div>
-
-      <div class="commands-hint">
-        <strong>Comandos de voz disponíveis</strong>
-        <ul>
-          <li><span class="cmd">"Adicionar reunião de trabalho às 14h"</span> — cadastra nova atividade</li>
-          <li><span class="cmd">"Inativar academia"</span> — inativa uma atividade pelo nome</li>
-          <li><span class="cmd">"Ativar academia"</span> — reativa uma atividade</li>
-          <li><span class="cmd">"Adicionar consulta médica categoria saúde"</span> — com categoria</li>
-          <li><span class="cmd">"Mostrar ativas"</span> / <span class="cmd">"Mostrar todas"</span> — filtra lista</li>
-        </ul>
       </div>
 
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay hidden" id="edit-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Editar atividade</h2>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field">
+          <label>Nome *</label>
+          <input type="text" id="e-name" maxlength="80" />
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Categoria</label>
+            <select id="e-category">
+              <option value="trabalho">Trabalho</option>
+              <option value="saude">Saúde</option>
+              <option value="pessoal">Pessoal</option>
+              <option value="estudo">Estudo</option>
+              <option value="lazer">Lazer</option>
+              <option value="viagem">Viagem</option>
+              <option value="shows">Shows</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Status</label>
+            <select id="e-status">
+              <option value="true">Ativa</option>
+              <option value="false">Inativa</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Data</label>
+            <input type="date" id="e-date" />
+          </div>
+          <div class="form-field">
+            <label>Hora</label>
+            <input type="time" id="e-time" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Descrição</label>
+          <textarea id="e-desc" rows="3" maxlength="400" placeholder="Detalhes opcionais..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-danger" id="btn-delete">Excluir</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-cancel" id="btn-cancel-edit">Cancelar</button>
+          <button class="btn-save" id="btn-save-edit">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMANDS MODAL -->
+  <div class="modal-overlay hidden" id="commands-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">🎙 Comandos de voz</h2>
+        <button class="modal-close" id="commands-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="cmd-section">
+          <div class="cmd-section-title">Adicionar atividade</div>
+          <div class="cmd-item"><code>"Adicionar reunião de trabalho"</code></div>
+          <div class="cmd-item"><code>"Criar academia às 7h"</code></div>
+          <div class="cmd-item"><code>"Nova consulta médica categoria saúde"</code></div>
+          <div class="cmd-item"><code>"Adicionar show do Roberto Carlos categoria shows"</code></div>
+          <div class="cmd-item"><code>"Criar viagem para Paris categoria viagem"</code></div>
+          <div class="cmd-item"><code>"Adicionar passeio no parque categoria lazer"</code></div>
+        </div>
+        <div class="cmd-section">
+          <div class="cmd-section-title">Ativar / Inativar</div>
+          <div class="cmd-item"><code>"Inativar academia"</code></div>
+          <div class="cmd-item"><code>"Ativar academia"</code></div>
+        </div>
+        <div class="cmd-section">
+          <div class="cmd-section-title">Navegar no tempo</div>
+          <div class="cmd-item"><code>"Ver hoje"</code></div>
+          <div class="cmd-item"><code>"Ver esta semana"</code></div>
+          <div class="cmd-item"><code>"Ver este mês"</code></div>
+          <div class="cmd-item"><code>"Ver este ano"</code></div>
+          <div class="cmd-item"><code>"Próximo"</code> / <code>"Anterior"</code></div>
+        </div>
+        <div class="cmd-note">💡 Clique em qualquer atividade para editar todos os campos manualmente.</div>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>
