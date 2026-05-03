@@ -321,11 +321,12 @@ async function setupPushNotifications() {
   try {
     if (!("serviceWorker" in navigator)) return;
 
-    // Aguarda SW existente ou registra novo
-    let reg = await navigator.serviceWorker.getRegistration('/planner/');
-    if (!reg) {
-      reg = await navigator.serviceWorker.register('/planner/firebase-messaging-sw.js');
-    }
+    // Remove SW antigo e registra novo limpo
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const r of regs) await r.unregister();
+
+    // Registra SW correto
+    const reg = await navigator.serviceWorker.register('/planner/firebase-messaging-sw.js');
 
     // Aguarda SW ficar ativo
     await navigator.serviceWorker.ready;
@@ -334,7 +335,7 @@ async function setupPushNotifications() {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return;
 
-    // Obtém token FCM
+    // Obtém token FCM com SW explícito
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: reg
