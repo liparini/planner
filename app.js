@@ -92,9 +92,6 @@ function updateSandboxLink() {
   const codeEl = $("wa-sandbox-code");
   const linkEl = $("wa-sandbox-link");
   if (!codeEl || !linkEl) return;
-  // Twilio sandbox join keyword is shown in Twilio console
-  // We prompt user to send "join <keyword>" — they get it from console
-  // We just deep-link to the Twilio sandbox number
   const sandboxNumber = from || "14155238886";
   const joinMsg = "join <cole-aqui-o-código-do-sandbox>";
   codeEl.textContent = `Veja o código em: console.twilio.com → Messaging → Try WhatsApp`;
@@ -102,7 +99,6 @@ function updateSandboxLink() {
 }
 
 function goWAStep(step, save) {
-  // Save current step data before leaving
   if (save) {
     if (waStep === 1) {
       const cfg = getWAConfig();
@@ -128,13 +124,11 @@ function goWAStep(step, save) {
 
   waStep = Math.max(1, Math.min(WA_TOTAL, step));
 
-  // Show/hide step content
   for (let i = 1; i <= WA_TOTAL; i++) {
     $(`wa-step-${i}`)?.classList.toggle("hidden", i !== waStep);
     $(`pill-${i}`)?.classList.toggle("active", i <= waStep);
   }
 
-  // Nav buttons
   const backBtn = $("wa-back"), nextBtn = $("wa-next");
   backBtn.style.visibility = waStep > 1 ? "visible" : "hidden";
   if (waStep === WA_TOTAL) {
@@ -189,17 +183,14 @@ const GOOGLE_SVG = `<svg width="18" height="18" viewBox="0 0 48 48" style="flex-
 const $ = id => document.getElementById(id);
 
 // ===== AUTH — persistent login =====
-// Set LOCAL persistence so the session survives page refreshes and tab closes
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-// Show a loading overlay while Firebase resolves the session
 $("login-screen").innerHTML += `<div id="auth-loading" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:200"><div style="font-size:32px">📅</div><div style="font-size:14px;color:var(--text2)">Carregando...</div></div>`;
 
 $("google-login-btn").addEventListener("click", async () => {
   try {
     $("google-login-btn").disabled = true;
     $("google-login-btn").textContent = "Entrando...";
-    // Use popup first; fall back to redirect (popup blocked on some mobile browsers)
     try {
       await signInWithPopup(auth, provider);
     } catch(popupErr) {
@@ -222,11 +213,9 @@ $("logout-btn").addEventListener("click", async () => {
   await signOut(auth);
 });
 
-// Handle redirect result (when returning from Google auth redirect)
 getRedirectResult(auth).catch(() => {});
 
 onAuthStateChanged(auth, user => {
-  // Hide loading overlay
   const loading = $("auth-loading");
   if (loading) loading.remove();
 
@@ -330,28 +319,36 @@ async function clearAllNotifications() {
 // ===== PUSH NOTIFICATIONS (FCM) =====
 async function setupPushNotifications() {
   try {
-    // Register service worker
     if (!("serviceWorker" in navigator)) return;
-    const reg = await navigator.serviceWorker.register("/planner/firebase-messaging-sw.js");
 
-    // Request permission
+    // Aguarda SW existente ou registra novo
+    let reg = await navigator.serviceWorker.getRegistration('/planner/');
+    if (!reg) {
+      reg = await navigator.serviceWorker.register('/planner/firebase-messaging-sw.js');
+    }
+
+    // Aguarda SW ficar ativo
+    await navigator.serviceWorker.ready;
+
+    // Solicita permissão
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return;
 
-    // Get FCM token
+    // Obtém token FCM
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: reg
     });
 
     if (token && currentUser) {
-      // Save token to Firestore so Cloud Function can use it
+      // Salva token no Firestore (usado pela Cloud Function)
       await setDoc(doc(db, "users", currentUser.uid, "tokens", "fcm"), {
         token, updatedAt: serverTimestamp(), platform: navigator.userAgent
       });
+      console.log("✅ Token FCM salvo:", token.substring(0, 20) + "...");
     }
 
-    // Handle foreground messages
+    // Mensagens em foreground
     onMessage(messaging, payload => {
       const { title, body } = payload.notification || {};
       showFeedback(`🔔 ${title}: ${body}`, "info");
@@ -362,14 +359,13 @@ async function setupPushNotifications() {
   }
 }
 
-// Schedule push notifications via Firestore triggers
+// Agenda notificação push via Firestore (Cloud Function processa)
 async function schedulePushNotification(activity) {
   if (!currentUser || !activity.date || !activity.time || activity.notifyBefore === "" || activity.notifyBefore === undefined) return;
   const notifyAt = new Date(`${activity.date}T${activity.time}`);
   notifyAt.setMinutes(notifyAt.getMinutes() - (parseInt(activity.notifyBefore) || 0));
   if (notifyAt <= new Date()) return;
 
-  // Save scheduled notification to Firestore
   await setDoc(doc(db, "users", currentUser.uid, "scheduled", activity.id), {
     title: `📋 ${activity.name}`,
     body: `${fmtDisplayDate(activity.date)} às ${activity.time}${activity.description ? " — " + activity.description : ""}`,
@@ -378,6 +374,7 @@ async function schedulePushNotification(activity) {
     updatedAt: serverTimestamp()
   });
 }
+
 function requestNotificationPermission() {
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
@@ -390,7 +387,7 @@ function showBrowserNotification(title, body) {
   }
 }
 
-// Check activity notifications
+// Verifica notificações de atividades
 async function checkNotifications() {
   if (!currentUser) return;
   const now = new Date();
@@ -416,7 +413,7 @@ async function checkNotifications() {
   }
 }
 
-// Check birthday notifications
+// Verifica notificações de aniversários
 async function checkBirthdayNotifications() {
   if (!currentUser) return;
   const now = new Date();
@@ -707,7 +704,6 @@ $("btn-delete").addEventListener("click",async()=>{
 });
 
 // ===== BIRTHDAY TAB =====
-// Fill day dropdowns
 function fillDaySelect(selId){
   const sel=$(selId); sel.innerHTML="";
   for(let i=1;i<=31;i++){const o=document.createElement("option");o.value=i;o.textContent=String(i).padStart(2,"0");sel.appendChild(o);}
@@ -733,7 +729,6 @@ $("btn-save-bday").addEventListener("click",async()=>{
   finally{$("btn-save-bday").disabled=false;$("btn-save-bday").textContent="Salvar aniversário";}
 });
 
-// Birthday month navigation
 function renderBdayMonthLabel(){$("bday-month-label").textContent=`${MONTHS_PT[bdayViewMonth]} ${bdayViewYear}`;}
 $("bday-prev").addEventListener("click",()=>{bdayViewMonth--;if(bdayViewMonth<0){bdayViewMonth=11;bdayViewYear--;}renderBirthdays();});
 $("bday-next").addEventListener("click",()=>{bdayViewMonth++;if(bdayViewMonth>11){bdayViewMonth=0;bdayViewYear++;}renderBirthdays();});
@@ -784,7 +779,6 @@ function bdayCardHTML(b, todayM, todayD){
 
 function relLabel(r){return{familia:"Família",amigo:"Amigo(a)",trabalho:"Trabalho",outro:"Outro"}[r]||"Outro";}
 
-// Edit birthday modal
 window.openEditBday = id => {
   const b=birthdays.find(x=>x.id===id); if(!b)return;
   editingBdayId=id;
@@ -830,7 +824,6 @@ $("wa-modal-close").addEventListener("click",()=>$("wa-modal").classList.add("hi
 $("wa-cancel").addEventListener("click",()=>$("wa-modal").classList.add("hidden"));
 $("wa-modal").addEventListener("click",e=>{if(e.target===$("wa-modal"))$("wa-modal").classList.add("hidden");});
 $("wa-back").addEventListener("click",()=>goWAStep(waStep - 1, false));
-// wa-next onclick is assigned dynamically inside goWAStep()
 
 $("btn-test-wa")?.addEventListener("click", async () => {
   const btn = $("btn-test-wa"), resultEl = $("wa-test-result");
