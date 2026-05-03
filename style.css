@@ -246,32 +246,42 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .tab-btn{padding:10px 14px;font-size:13px}
 }
 
-/* WHATSAPP */
+/* ===== WHATSAPP ===== */
 .wa-btn { color: #25D366; }
-.wa-btn:hover { background: #e8fdf0; border-color: #25D366; color: #128C7E; }
+.wa-btn:hover { background: #e8fdf0; border-color: #25D366; }
 .wa-status { padding: 8px 12px; border-radius: var(--radius); font-size: 13px; font-weight: 500; }
 .wa-status.ok { background: var(--green-bg); color: var(--green); }
 .wa-status.warn { background: var(--amber-bg); color: var(--amber); }
 .wa-how { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
-.wa-how-title { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
-.wa-steps { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
-.wa-steps li { font-size: 13px; color: var(--text2); line-height: 1.5; }
-.wa-steps strong { color: var(--text); font-weight: 500; }
-.wa-steps code { background: var(--bg3); padding: 1px 5px; border-radius: 4px; font-size: 11px; font-family: monospace; color: var(--text); }
+.wa-how-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.wa-desc { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 12px; }
+.wa-desc strong { color: var(--text); }
+.wa-preview-wrap { display: flex; flex-direction: column; gap: 6px; }
+.wa-bubble { background: #e7ffd9; color: #111; border-radius: 12px 12px 12px 2px; padding: 9px 12px; font-size: 12px; line-height: 1.6; max-width: 85%; border: 1px solid #c5f0a0; }
+.wa-bubble-bday { background: #fff3e0; border-color: #f0c57a; }
+.phone-input-wrap { display: flex; align-items: center; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; background: var(--bg); }
+.phone-input-wrap:focus-within { border-color: var(--accent); }
+.phone-prefix { padding: 8px 10px; background: var(--bg2); font-size: 14px; color: var(--text2); border-right: 1px solid var(--border2); flex-shrink: 0; }
+.phone-input-wrap input { border: none; background: transparent; outline: none; padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); width: 100%; }
+.field-hint { font-size: 11px; color: var(--text3); margin-top: 4px; display: block; }
 .btn-outline { padding: 8px 14px; background: transparent; color: #25D366; border: 1px solid #25D366; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all .15s; }
 .btn-outline:hover { background: #e8fdf0; }
 
-/* WA DUAL MODE */
-.wa-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:12px}
-.wa-tab{padding:7px 16px;background:transparent;border:none;border-bottom:2px solid transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:-1px;transition:all .15s}
-.wa-tab:hover{color:var(--text)}
-.wa-tab.active{color:#25D366;border-bottom-color:#25D366;font-weight:500}
-.wa-step-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
-.wa-step-num{width:22px;height:22px;border-radius:50%;background:#25D366;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-.wa-step-text{flex:1;font-size:13px;color:var(--text2);line-height:1.6}
-.wa-step-text strong{color:var(--text)}
-.wa-link-btn{display:inline-flex;align-items:center;gap:6px;margin:8px 0 4px;padding:8px 14px;background:#25D366;color:#fff;border-radius:var(--radius);font-size:13px;font-weight:500;text-decoration:none;transition:opacity .15s}
+/* ===== WA WIZARD ===== */
+.wa-steps-header{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.wa-step-pill{padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg2);color:var(--text3);border:1px solid var(--border);transition:all .2s}
+.wa-step-pill.active{background:#25D366;color:#fff;border-color:#25D366}
+.wa-step-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:6px}
+.wa-step-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px}
+.wa-step-desc strong{color:var(--text)}
+.wa-step-desc code{background:var(--bg2);padding:1px 5px;border-radius:4px;font-size:11px;font-family:monospace}
+.wa-link{color:var(--accent);text-decoration:none}
+.wa-link:hover{text-decoration:underline}
+.wa-sandbox-join{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.wa-sandbox-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)}
+.wa-sandbox-code{font-size:12px;color:var(--text3);line-height:1.5}
+.wa-link-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#25D366;color:#fff;border-radius:var(--radius);font-size:13px;font-weight:500;text-decoration:none;transition:opacity .15s;width:fit-content}
 .wa-link-btn:hover{opacity:.85}
-.wa-tip{display:block;font-size:11px;color:var(--text3);margin-top:2px}
-.wa-manual-preview{margin-top:10px;background:var(--bg2);border-radius:var(--radius);padding:12px 14px}
-.wa-preview-msg{font-size:13px;color:var(--text);line-height:1.7;margin-top:6px;background:var(--bg);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
+.wa-done-preview{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.wa-bubble{background:#e7ffd9;color:#111;border-radius:12px 12px 12px 2px;padding:9px 12px;font-size:12px;line-height:1.6;max-width:85%;border:1px solid #c5f0a0}
+.wa-bubble-bday{background:#fff3e0;border-color:#f0c57a}
