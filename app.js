@@ -26,7 +26,7 @@ const provider = new GoogleAuthProvider();
 const messaging = getMessaging(fbApp);
 
 // VAPID key for FCM Web Push
-const VAPID_KEY = "BEDRWdqPmYPbO-tT8PolcxXFAmATBjk6kkQ7kWrkcrIGk2vH9p1sZlBuNq0vSN_NXM1YuQDeHmhFUJa7tnMqCd4";
+const VAPID_KEY = "Blu_mpXyqXwV6pkSJ0wvV4RGdmpb1LwH14GT6Q6KMzZiMH6zfmwktK-QT9q85GCi8FSIiYW3GGTiBAiceKAUdjo";
 
 // ===== STATE =====
 let currentUser = null;
