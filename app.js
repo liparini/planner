@@ -1,4 +1,3 @@
-// v2.0 - SW fix
 // ===== FIREBASE =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithRedirect, signInWithPopup,
@@ -26,7 +25,7 @@ const provider = new GoogleAuthProvider();
 const messaging = getMessaging(fbApp);
 
 // VAPID key for FCM Web Push
-const VAPID_KEY = "BIu_mpXyqXwV6pkSJ0wvV4RGdmpb1LwH14GT6Q6KMzZiMH6zfmwktK-QT9q85GCi8FSIiYW3GGTiBAiceKAUdjo";
+const VAPID_KEY = "BEDRWdqPmYPbO-tT8PolcxXFAmATBjk6kkQ7kWrkcrIGk2vH9p1sZlBuNq0vSN_NXM1YuQDeHmhFUJa7tnMqCd4";
 
 // ===== STATE =====
 let currentUser = null;
@@ -342,8 +341,10 @@ async function setupPushNotifications() {
     });
 
     if (token && currentUser) {
-      // Salva token no Firestore (usado pela Cloud Function)
-      await setDoc(doc(db, "users", currentUser.uid, "tokens", "fcm"), {
+      // Salva token por dispositivo no Firestore (Cloud Function envia para todos)
+      const deviceId = localStorage.getItem('deviceId') || crypto.randomUUID();
+      localStorage.setItem('deviceId', deviceId);
+      await setDoc(doc(db, "users", currentUser.uid, "tokens", deviceId), {
         token, updatedAt: serverTimestamp(), platform: navigator.userAgent
       });
       console.log("✅ Token FCM salvo:", token.substring(0, 20) + "...");
@@ -927,4 +928,3 @@ $("mic-btn").addEventListener("click",()=>{
 
 function showTranscript(msg){$("transcript-box").textContent=msg;$("transcript-box").classList.remove("hidden");}
 function showFeedback(msg,type){$("feedback-msg").textContent=msg;$("feedback-msg").className=`feedback-msg ${type}`;$("feedback-msg").classList.remove("hidden");clearTimeout($("feedback-msg")._t);$("feedback-msg")._t=setTimeout(()=>$("feedback-msg").classList.add("hidden"),3500);}
-
