@@ -1,6 +1,7 @@
 // ===== FIREBASE =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signInWithPopup,
+  getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
   onSnapshot, query, orderBy, serverTimestamp, setDoc, getDocs }
@@ -31,6 +32,49 @@ let recognition = null, isListening = false;
 let editingActivityId = null, editingBdayId = null;
 let notifCheckInterval = null;
 
+// WhatsApp config — dual mode: "auto" (CallMeBot API) or "manual" (wa.me link)
+function getWAConfig() {
+  return JSON.parse(localStorage.getItem("wa_config") || "{}");
+}
+function setWAConfig(cfg) {
+  localStorage.setItem("wa_config", JSON.stringify(cfg));
+}
+
+// CALLMEBOT_NUMBER — the number users send the activation message to
+const CALLMEBOT_NUMBER = "34644829807";
+const CALLMEBOT_ACTIVATION_MSG = "I allow callmebot to send me messages";
+
+// Build the wa.me link that opens WhatsApp with message pre-filled
+function buildWaLink(phone, message) {
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
+// Update the activate link dynamically as user types their phone number
+window.updateActivateLink = function() {
+  const phone = $("wa-phone")?.value.trim().replace(/\D/g,"") || "";
+  const link = $("wa-activate-link");
+  if (!link) return;
+  // Link opens WhatsApp to the CallMeBot number with activation message
+  link.href = buildWaLink(CALLMEBOT_NUMBER, CALLMEBOT_ACTIVATION_MSG);
+};
+
+async function sendWhatsApp(message) {
+  const cfg = getWAConfig();
+  if (!cfg.phone) return;
+
+  if (cfg.mode === "manual") {
+    // Open WhatsApp with message pre-filled — user just taps Send
+    const link = buildWaLink(cfg.phone, message);
+    window.open(link, "_blank");
+    return;
+  }
+
+  // Auto mode: CallMeBot API
+  if (!cfg.apikey) return;
+  const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cfg.phone)}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(cfg.apikey)}`;
+  try { await fetch(url, { mode: "no-cors" }); } catch(e) { /* fire and forget */ }
+}
+
 const COLORS = ["#2563eb","#16a34a","#d4537e","#d85a30","#6d28d9","#b45309","#0f766e","#be185d","#3730a3","#dc2626"];
 const AVATAR_COLORS = ["#2563eb","#16a34a","#d4537e","#6d28d9","#b45309","#0f766e","#be185d","#3730a3"];
 const CAT_LABELS = {trabalho:"Trabalho",saude:"Saúde",pessoal:"Pessoal",estudo:"Estudo",lazer:"Lazer",viagem:"Viagem",shows:"Shows",outro:"Outro"};
@@ -42,12 +86,25 @@ const GOOGLE_SVG = `<svg width="18" height="18" viewBox="0 0 48 48" style="flex-
 // ===== DOM HELPERS =====
 const $ = id => document.getElementById(id);
 
-// ===== AUTH =====
+// ===== AUTH — persistent login =====
+// Set LOCAL persistence so the session survives page refreshes and tab closes
+setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+// Show a loading overlay while Firebase resolves the session
+$("login-screen").innerHTML += `<div id="auth-loading" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:200"><div style="font-size:32px">📅</div><div style="font-size:14px;color:var(--text2)">Carregando...</div></div>`;
+
 $("google-login-btn").addEventListener("click", async () => {
   try {
     $("google-login-btn").disabled = true;
     $("google-login-btn").textContent = "Entrando...";
-    await signInWithPopup(auth, provider);
+    // Use popup first; fall back to redirect (popup blocked on some mobile browsers)
+    try {
+      await signInWithPopup(auth, provider);
+    } catch(popupErr) {
+      if (popupErr.code === "auth/popup-blocked" || popupErr.code === "auth/popup-closed-by-user") {
+        await signInWithRedirect(auth, provider);
+      } else { throw popupErr; }
+    }
   } catch(e) {
     $("google-login-btn").disabled = false;
     $("google-login-btn").innerHTML = GOOGLE_SVG;
@@ -56,13 +113,21 @@ $("google-login-btn").addEventListener("click", async () => {
 });
 
 $("logout-btn").addEventListener("click", async () => {
+  if (!confirm("Deseja realmente sair?")) return;
   if (unsubActivities) unsubActivities();
   if (unsubBirthdays) unsubBirthdays();
   clearInterval(notifCheckInterval);
   await signOut(auth);
 });
 
+// Handle redirect result (when returning from Google auth redirect)
+getRedirectResult(auth).catch(() => {});
+
 onAuthStateChanged(auth, user => {
+  // Hide loading overlay
+  const loading = $("auth-loading");
+  if (loading) loading.remove();
+
   if (user) {
     currentUser = user;
     $("login-screen").classList.add("hidden");
@@ -72,6 +137,7 @@ onAuthStateChanged(auth, user => {
     $("app-date").textContent = new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
     loadActivities();
     loadBirthdays();
+    loadWASettings();
     requestNotificationPermission();
     setTimeout(() => { checkNotifications(); checkBirthdayNotifications(); }, 2000);
     notifCheckInterval = setInterval(() => { checkNotifications(); checkBirthdayNotifications(); }, 60000);
@@ -158,7 +224,48 @@ async function clearAllNotifications() {
   renderNotifPanel();
 }
 
-// ===== NOTIFICATION ENGINE =====
+// ===== WHATSAPP SETTINGS =====
+function loadWASettings() {
+  const cfg = getWAConfig();
+  const mode = cfg.mode || "auto";
+
+  // Set active tab
+  document.querySelectorAll(".wa-tab").forEach(t => t.classList.toggle("active", t.dataset.watab === mode));
+  $("watab-auto").classList.toggle("hidden", mode !== "auto");
+  $("watab-manual").classList.toggle("hidden", mode !== "manual");
+
+  if ($("wa-phone")) $("wa-phone").value = cfg.phone || "";
+  if ($("wa-apikey")) $("wa-apikey").value = cfg.apikey || "";
+  if ($("wa-phone-manual")) $("wa-phone-manual").value = cfg.phone || "";
+
+  // Set activate link default
+  window.updateActivateLink();
+  updateWAStatus();
+}
+
+function updateWAStatus() {
+  const cfg = getWAConfig();
+  const statusEl = $("wa-status");
+  if (!statusEl) return;
+  if (cfg.phone && (cfg.mode === "manual" || cfg.apikey)) {
+    const modeLabel = cfg.mode === "manual" ? "Manual (wa.me)" : "Automático (CallMeBot)";
+    statusEl.textContent = `✅ Configurado — ${modeLabel} — ${cfg.phone}`;
+    statusEl.className = "wa-status ok";
+  } else {
+    statusEl.textContent = "⚠️ Número não configurado";
+    statusEl.className = "wa-status warn";
+  }
+}
+
+// Tab switching inside WA modal
+document.querySelectorAll(".wa-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.watab;
+    document.querySelectorAll(".wa-tab").forEach(b => b.classList.toggle("active", b === btn));
+    $("watab-auto").classList.toggle("hidden", tab !== "auto");
+    $("watab-manual").classList.toggle("hidden", tab !== "manual");
+  });
+});
 function requestNotificationPermission() {
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
@@ -188,7 +295,9 @@ async function checkNotifications() {
       fired[key] = true;
       localStorage.setItem(`notif_fired_${currentUser.uid}`, JSON.stringify(fired));
       const label = parseInt(a.notifyBefore) === 0 ? "agora" : `em ${a.notifyBefore >= 60 ? (a.notifyBefore/60)+"h" : a.notifyBefore+"min"}`;
-      showBrowserNotification(`📋 ${a.name}`, `Atividade agendada para ${a.time} — ${a.date}`);
+      const msgWA = `📋 *Lembrete do Planner*\n\n*${a.name}*\n🗓 ${fmtDisplayDate(a.date)} às ${a.time}${a.description?"\n📝 "+a.description:""}`;
+      showBrowserNotification(`📋 ${a.name}`, `Agendado para ${a.time} — ${fmtDisplayDate(a.date)}`);
+      await sendWhatsApp(msgWA);
       await saveNotification({ type:"activity", title:a.name, sub:`${fmtDisplayDate(a.date)} às ${a.time}`, icon:"📋", label });
       await loadNotifications();
     }
@@ -215,7 +324,12 @@ async function checkBirthdayNotifications() {
       localStorage.setItem(`bday_fired_${currentUser.uid}`, JSON.stringify(fired));
       const isToday = b.month === todayM && b.day === todayD;
       const sub = isToday ? "Hoje é o aniversário!" : `Aniversário em ${advanceDays} dia${advanceDays>1?"s":""}`;
+      const age = b.year ? ` — ${yearKey - b.year} anos` : "";
+      const msgWA = isToday
+        ? `🎂 *Aniversário hoje!*\n\n*${b.name}*${age}\n🎉 Não esqueça de parabenizar!`
+        : `🎈 *Lembrete de aniversário*\n\n*${b.name}* faz aniversário em *${advanceDays} dia${advanceDays>1?"s":""}*${age}\n📅 ${String(b.day).padStart(2,"0")}/${String(b.month).padStart(2,"0")}`;
       showBrowserNotification(`🎂 ${b.name}`, sub);
+      await sendWhatsApp(msgWA);
       await saveNotification({ type:"birthday", title:b.name, sub, icon:"🎂", label:isToday?"hoje":`${advanceDays}d` });
       await loadNotifications();
     }
@@ -597,6 +711,57 @@ $("btn-delete-bday").addEventListener("click",async()=>{
 $("commands-btn").addEventListener("click",()=>$("commands-modal").classList.remove("hidden"));
 $("commands-close").addEventListener("click",()=>$("commands-modal").classList.add("hidden"));
 $("commands-modal").addEventListener("click",e=>{if(e.target===$("commands-modal"))$("commands-modal").classList.add("hidden");});
+
+// ===== WHATSAPP SETTINGS MODAL =====
+$("wa-settings-btn").addEventListener("click",()=>{
+  loadWASettings();
+  $("wa-modal").classList.remove("hidden");
+});
+$("wa-modal-close").addEventListener("click",()=>$("wa-modal").classList.add("hidden"));
+$("wa-cancel").addEventListener("click",()=>$("wa-modal").classList.add("hidden"));
+$("wa-modal").addEventListener("click",e=>{if(e.target===$("wa-modal"))$("wa-modal").classList.add("hidden");});
+
+$("btn-save-wa").addEventListener("click",()=>{
+  // Detect active tab
+  const activeTab = document.querySelector(".wa-tab.active")?.dataset.watab || "auto";
+  let phone, apikey="", mode=activeTab;
+
+  if (activeTab === "auto") {
+    phone = $("wa-phone").value.trim().replace(/\D/g,"");
+    apikey = $("wa-apikey").value.trim();
+    if (!phone) { showFeedback("Informe seu número de WhatsApp.","error"); return; }
+    if (!apikey) { showFeedback("Informe a API Key do CallMeBot.","error"); return; }
+  } else {
+    phone = $("wa-phone-manual").value.trim().replace(/\D/g,"");
+    if (!phone) { showFeedback("Informe seu número de WhatsApp.","error"); return; }
+  }
+
+  setWAConfig({ phone, apikey, mode });
+  updateWAStatus();
+  showFeedback("✅ WhatsApp configurado com sucesso!","success");
+  $("wa-modal").classList.add("hidden");
+});
+
+$("btn-test-wa").addEventListener("click",async()=>{
+  const activeTab = document.querySelector(".wa-tab.active")?.dataset.watab || "auto";
+  let phone, apikey="";
+
+  if (activeTab === "auto") {
+    phone = $("wa-phone").value.trim().replace(/\D/g,"");
+    apikey = $("wa-apikey").value.trim();
+    if (!phone || !apikey) { showFeedback("Preencha número e API Key primeiro.","error"); return; }
+    setWAConfig({ phone, apikey, mode:"auto" });
+  } else {
+    phone = $("wa-phone-manual").value.trim().replace(/\D/g,"");
+    if (!phone) { showFeedback("Informe seu número primeiro.","error"); return; }
+    setWAConfig({ phone, apikey:"", mode:"manual" });
+  }
+
+  $("btn-test-wa").disabled=true; $("btn-test-wa").textContent="Enviando...";
+  await sendWhatsApp("✅ *Teste do Meu Planner*\n\nWhatsApp configurado! Você receberá lembretes aqui. 📅");
+  showFeedback(activeTab==="manual"?"WhatsApp aberto! Confira a mensagem.":"Mensagem enviada! Confira seu WhatsApp.","success");
+  $("btn-test-wa").disabled=false; $("btn-test-wa").textContent="📱 Testar";
+});
 
 // ===== VOICE =====
 function detectCategory(t){
