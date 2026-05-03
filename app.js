@@ -32,47 +32,143 @@ let recognition = null, isListening = false;
 let editingActivityId = null, editingBdayId = null;
 let notifCheckInterval = null;
 
-// WhatsApp config — dual mode: "auto" (CallMeBot API) or "manual" (wa.me link)
-function getWAConfig() {
-  return JSON.parse(localStorage.getItem("wa_config") || "{}");
-}
-function setWAConfig(cfg) {
-  localStorage.setItem("wa_config", JSON.stringify(cfg));
-}
-
-// CALLMEBOT_NUMBER — the number users send the activation message to
-const CALLMEBOT_NUMBER = "34644829807";
-const CALLMEBOT_ACTIVATION_MSG = "I allow callmebot to send me messages";
-
-// Build the wa.me link that opens WhatsApp with message pre-filled
-function buildWaLink(phone, message) {
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-}
-
-// Update the activate link dynamically as user types their phone number
-window.updateActivateLink = function() {
-  const phone = $("wa-phone")?.value.trim().replace(/\D/g,"") || "";
-  const link = $("wa-activate-link");
-  if (!link) return;
-  // Link opens WhatsApp to the CallMeBot number with activation message
-  link.href = buildWaLink(CALLMEBOT_NUMBER, CALLMEBOT_ACTIVATION_MSG);
-};
+// ===== WHATSAPP — Twilio via Cloudflare Worker =====
+function getWAConfig() { return JSON.parse(localStorage.getItem("wa_config") || "{}"); }
+function setWAConfig(cfg) { localStorage.setItem("wa_config", JSON.stringify(cfg)); }
 
 async function sendWhatsApp(message) {
   const cfg = getWAConfig();
-  if (!cfg.phone) return;
+  if (!cfg.workerUrl || !cfg.phone) return;
+  try {
+    await fetch(cfg.workerUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: cfg.phone,
+        message,
+        appToken: cfg.appToken || ""
+      })
+    });
+  } catch(e) { console.warn("WA send failed:", e); }
+}
 
-  if (cfg.mode === "manual") {
-    // Open WhatsApp with message pre-filled — user just taps Send
-    const link = buildWaLink(cfg.phone, message);
-    window.open(link, "_blank");
-    return;
+// ===== WHATSAPP WIZARD UI =====
+let waStep = 1;
+const WA_TOTAL = 4;
+
+function loadWASettings() {
+  const cfg = getWAConfig();
+  if ($("wa-sid"))         $("wa-sid").value         = cfg.sid        || "";
+  if ($("wa-token"))       $("wa-token").value       = cfg.authToken  || "";
+  if ($("wa-from"))        $("wa-from").value        = cfg.from       || "";
+  if ($("wa-worker-url"))  $("wa-worker-url").value  = cfg.workerUrl  || "";
+  if ($("wa-app-token"))   $("wa-app-token").value   = cfg.appToken   || "";
+  if ($("wa-phone"))       $("wa-phone").value       = cfg.phone      || "";
+  updateWAStatus();
+  goWAStep(cfg.workerUrl && cfg.phone ? 4 : 1, false);
+  updateSandboxLink();
+}
+
+function updateWAStatus() {
+  const cfg = getWAConfig();
+  const el = $("wa-status"); if (!el) return;
+  if (cfg.workerUrl && cfg.phone) {
+    el.textContent = `✅ Configurado — mensagens automáticas ativas`;
+    el.className = "wa-status ok";
+  } else {
+    el.textContent = "⚠️ Não configurado";
+    el.className = "wa-status warn";
+  }
+}
+
+function updateSandboxLink() {
+  const from = ($("wa-from")?.value || "").replace(/\D/g,"");
+  const codeEl = $("wa-sandbox-code");
+  const linkEl = $("wa-sandbox-link");
+  if (!codeEl || !linkEl) return;
+  // Twilio sandbox join keyword is shown in Twilio console
+  // We prompt user to send "join <keyword>" — they get it from console
+  // We just deep-link to the Twilio sandbox number
+  const sandboxNumber = from || "14155238886";
+  const joinMsg = "join <cole-aqui-o-código-do-sandbox>";
+  codeEl.textContent = `Veja o código em: console.twilio.com → Messaging → Try WhatsApp`;
+  linkEl.href = `https://wa.me/${sandboxNumber}?text=${encodeURIComponent(joinMsg)}`;
+}
+
+function goWAStep(step, save) {
+  // Save current step data before leaving
+  if (save) {
+    if (waStep === 1) {
+      const cfg = getWAConfig();
+      setWAConfig({ ...cfg,
+        sid: $("wa-sid").value.trim(),
+        authToken: $("wa-token").value.trim(),
+        from: $("wa-from").value.trim()
+      });
+    }
+    if (waStep === 2) {
+      const cfg = getWAConfig();
+      setWAConfig({ ...cfg,
+        workerUrl: $("wa-worker-url").value.trim().replace(/\/$/, ""),
+        appToken: $("wa-app-token").value.trim()
+      });
+    }
+    if (waStep === 3) {
+      const cfg = getWAConfig();
+      setWAConfig({ ...cfg, phone: $("wa-phone").value.trim().replace(/\D/g,"") });
+      updateWAStatus();
+    }
   }
 
-  // Auto mode: CallMeBot API
-  if (!cfg.apikey) return;
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cfg.phone)}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(cfg.apikey)}`;
-  try { await fetch(url, { mode: "no-cors" }); } catch(e) { /* fire and forget */ }
+  waStep = Math.max(1, Math.min(WA_TOTAL, step));
+
+  // Show/hide step content
+  for (let i = 1; i <= WA_TOTAL; i++) {
+    $(`wa-step-${i}`)?.classList.toggle("hidden", i !== waStep);
+    $(`pill-${i}`)?.classList.toggle("active", i <= waStep);
+  }
+
+  // Nav buttons
+  const backBtn = $("wa-back"), nextBtn = $("wa-next");
+  backBtn.style.visibility = waStep > 1 ? "visible" : "hidden";
+  if (waStep === WA_TOTAL) {
+    nextBtn.textContent = "Salvar";
+    nextBtn.onclick = () => { saveWA(); $("wa-modal").classList.add("hidden"); };
+  } else {
+    nextBtn.textContent = "Próximo →";
+    nextBtn.onclick = () => { if (validateWAStep()) goWAStep(waStep + 1, true); };
+  }
+
+  if (waStep === 3) updateSandboxLink();
+}
+
+function validateWAStep() {
+  if (waStep === 1) {
+    if (!$("wa-sid").value.trim()) { showFeedback("Informe o Account SID.", "error"); return false; }
+    if (!$("wa-token").value.trim()) { showFeedback("Informe o Auth Token.", "error"); return false; }
+    if (!$("wa-from").value.trim()) { showFeedback("Informe o número do Sandbox.", "error"); return false; }
+  }
+  if (waStep === 2) {
+    if (!$("wa-worker-url").value.trim()) { showFeedback("Informe a URL do Worker.", "error"); return false; }
+  }
+  if (waStep === 3) {
+    if (!$("wa-phone").value.trim()) { showFeedback("Informe seu número.", "error"); return false; }
+  }
+  return true;
+}
+
+function saveWA() {
+  const cfg = getWAConfig();
+  setWAConfig({ ...cfg,
+    phone: $("wa-phone").value.trim().replace(/\D/g,""),
+    workerUrl: $("wa-worker-url").value.trim().replace(/\/$/, ""),
+    appToken: $("wa-app-token").value.trim(),
+    sid: $("wa-sid").value.trim(),
+    authToken: $("wa-token").value.trim(),
+    from: $("wa-from").value.trim()
+  });
+  updateWAStatus();
+  showFeedback("✅ WhatsApp automático configurado!", "success");
 }
 
 const COLORS = ["#2563eb","#16a34a","#d4537e","#d85a30","#6d28d9","#b45309","#0f766e","#be185d","#3730a3","#dc2626"];
@@ -224,48 +320,7 @@ async function clearAllNotifications() {
   renderNotifPanel();
 }
 
-// ===== WHATSAPP SETTINGS =====
-function loadWASettings() {
-  const cfg = getWAConfig();
-  const mode = cfg.mode || "auto";
-
-  // Set active tab
-  document.querySelectorAll(".wa-tab").forEach(t => t.classList.toggle("active", t.dataset.watab === mode));
-  $("watab-auto").classList.toggle("hidden", mode !== "auto");
-  $("watab-manual").classList.toggle("hidden", mode !== "manual");
-
-  if ($("wa-phone")) $("wa-phone").value = cfg.phone || "";
-  if ($("wa-apikey")) $("wa-apikey").value = cfg.apikey || "";
-  if ($("wa-phone-manual")) $("wa-phone-manual").value = cfg.phone || "";
-
-  // Set activate link default
-  window.updateActivateLink();
-  updateWAStatus();
-}
-
-function updateWAStatus() {
-  const cfg = getWAConfig();
-  const statusEl = $("wa-status");
-  if (!statusEl) return;
-  if (cfg.phone && (cfg.mode === "manual" || cfg.apikey)) {
-    const modeLabel = cfg.mode === "manual" ? "Manual (wa.me)" : "Automático (CallMeBot)";
-    statusEl.textContent = `✅ Configurado — ${modeLabel} — ${cfg.phone}`;
-    statusEl.className = "wa-status ok";
-  } else {
-    statusEl.textContent = "⚠️ Número não configurado";
-    statusEl.className = "wa-status warn";
-  }
-}
-
-// Tab switching inside WA modal
-document.querySelectorAll(".wa-tab").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const tab = btn.dataset.watab;
-    document.querySelectorAll(".wa-tab").forEach(b => b.classList.toggle("active", b === btn));
-    $("watab-auto").classList.toggle("hidden", tab !== "auto");
-    $("watab-manual").classList.toggle("hidden", tab !== "manual");
-  });
-});
+// ===== NOTIFICATION ENGINE =====
 function requestNotificationPermission() {
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
@@ -713,54 +768,37 @@ $("commands-close").addEventListener("click",()=>$("commands-modal").classList.a
 $("commands-modal").addEventListener("click",e=>{if(e.target===$("commands-modal"))$("commands-modal").classList.add("hidden");});
 
 // ===== WHATSAPP SETTINGS MODAL =====
-$("wa-settings-btn").addEventListener("click",()=>{
-  loadWASettings();
-  $("wa-modal").classList.remove("hidden");
-});
+$("wa-settings-btn").addEventListener("click",()=>{ loadWASettings(); $("wa-modal").classList.remove("hidden"); });
 $("wa-modal-close").addEventListener("click",()=>$("wa-modal").classList.add("hidden"));
 $("wa-cancel").addEventListener("click",()=>$("wa-modal").classList.add("hidden"));
 $("wa-modal").addEventListener("click",e=>{if(e.target===$("wa-modal"))$("wa-modal").classList.add("hidden");});
+$("wa-back").addEventListener("click",()=>goWAStep(waStep - 1, false));
+// wa-next onclick is assigned dynamically inside goWAStep()
 
-$("btn-save-wa").addEventListener("click",()=>{
-  // Detect active tab
-  const activeTab = document.querySelector(".wa-tab.active")?.dataset.watab || "auto";
-  let phone, apikey="", mode=activeTab;
-
-  if (activeTab === "auto") {
-    phone = $("wa-phone").value.trim().replace(/\D/g,"");
-    apikey = $("wa-apikey").value.trim();
-    if (!phone) { showFeedback("Informe seu número de WhatsApp.","error"); return; }
-    if (!apikey) { showFeedback("Informe a API Key do CallMeBot.","error"); return; }
-  } else {
-    phone = $("wa-phone-manual").value.trim().replace(/\D/g,"");
-    if (!phone) { showFeedback("Informe seu número de WhatsApp.","error"); return; }
+$("btn-test-wa")?.addEventListener("click", async () => {
+  const btn = $("btn-test-wa"), resultEl = $("wa-test-result");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    const cfg = getWAConfig();
+    const res = await fetch(cfg.workerUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: cfg.phone, message: "✅ *Teste — Meu Planner*\n\nMensagem automática funcionando! 📅\n\nVocê receberá lembretes assim:\n\n📋 *Reunião de equipe*\n🗓 Hoje às 14:00", appToken: cfg.appToken || "" })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      resultEl.textContent = "✅ Mensagem enviada! Confira seu WhatsApp.";
+      resultEl.style.cssText = "background:var(--green-bg);color:var(--green)";
+    } else {
+      resultEl.textContent = `❌ Erro Twilio: ${data.error || "verifique as credenciais"}`;
+      resultEl.style.cssText = "background:var(--red-bg);color:var(--red)";
+    }
+  } catch(e) {
+    resultEl.textContent = "❌ Não conectou ao Worker — verifique a URL.";
+    resultEl.style.cssText = "background:var(--red-bg);color:var(--red)";
   }
-
-  setWAConfig({ phone, apikey, mode });
-  updateWAStatus();
-  showFeedback("✅ WhatsApp configurado com sucesso!","success");
-  $("wa-modal").classList.add("hidden");
-});
-
-$("btn-test-wa").addEventListener("click",async()=>{
-  const activeTab = document.querySelector(".wa-tab.active")?.dataset.watab || "auto";
-  let phone, apikey="";
-
-  if (activeTab === "auto") {
-    phone = $("wa-phone").value.trim().replace(/\D/g,"");
-    apikey = $("wa-apikey").value.trim();
-    if (!phone || !apikey) { showFeedback("Preencha número e API Key primeiro.","error"); return; }
-    setWAConfig({ phone, apikey, mode:"auto" });
-  } else {
-    phone = $("wa-phone-manual").value.trim().replace(/\D/g,"");
-    if (!phone) { showFeedback("Informe seu número primeiro.","error"); return; }
-    setWAConfig({ phone, apikey:"", mode:"manual" });
-  }
-
-  $("btn-test-wa").disabled=true; $("btn-test-wa").textContent="Enviando...";
-  await sendWhatsApp("✅ *Teste do Meu Planner*\n\nWhatsApp configurado! Você receberá lembretes aqui. 📅");
-  showFeedback(activeTab==="manual"?"WhatsApp aberto! Confira a mensagem.":"Mensagem enviada! Confira seu WhatsApp.","success");
-  $("btn-test-wa").disabled=false; $("btn-test-wa").textContent="📱 Testar";
+  resultEl.classList.remove("hidden");
+  btn.disabled = false; btn.textContent = "📱 Enviar mensagem de teste";
 });
 
 // ===== VOICE =====
