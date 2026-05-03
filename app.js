@@ -1,3 +1,4 @@
+// v2.0 - SW fix
 // ===== FIREBASE =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithRedirect, signInWithPopup,
@@ -926,3 +927,4 @@ $("mic-btn").addEventListener("click",()=>{
 
 function showTranscript(msg){$("transcript-box").textContent=msg;$("transcript-box").classList.remove("hidden");}
 function showFeedback(msg,type){$("feedback-msg").textContent=msg;$("feedback-msg").className=`feedback-msg ${type}`;$("feedback-msg").classList.remove("hidden");clearTimeout($("feedback-msg")._t);$("feedback-msg")._t=setTimeout(()=>$("feedback-msg").classList.add("hidden"),3500);}
+
