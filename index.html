@@ -419,78 +419,101 @@
 
 <!-- WHATSAPP SETTINGS MODAL -->
 <div class="modal-overlay hidden" id="wa-modal">
-  <div class="modal-card" style="max-width:480px">
+  <div class="modal-card" style="max-width:500px">
     <div class="modal-header">
       <h2 class="modal-title">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" style="vertical-align:middle;margin-right:6px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        WhatsApp — Notificações
+        WhatsApp Automático
       </h2>
       <button class="modal-close" id="wa-modal-close">✕</button>
     </div>
     <div class="modal-body">
-      <div id="wa-status" class="wa-status warn">⚠️ Número não configurado</div>
 
-      <!-- TAB SWITCH -->
-      <div class="wa-tabs">
-        <button class="wa-tab active" data-watab="auto">🤖 Automático</button>
-        <button class="wa-tab" data-watab="manual">✋ Manual</button>
+      <div id="wa-status" class="wa-status warn">⚠️ Não configurado</div>
+
+      <!-- STEP INDICATOR -->
+      <div class="wa-steps-header">
+        <div class="wa-step-pill active" id="pill-1">1 · Twilio</div>
+        <div class="wa-step-pill" id="pill-2">2 · Worker</div>
+        <div class="wa-step-pill" id="pill-3">3 · Sandbox</div>
+        <div class="wa-step-pill" id="pill-4">4 · Pronto</div>
       </div>
 
-      <!-- AUTO TAB: CallMeBot -->
-      <div id="watab-auto">
-        <div class="wa-how">
-          <div class="wa-how-title">📲 Ativar com CallMeBot — 2 passos</div>
-          <div class="wa-step-row">
-            <div class="wa-step-num">1</div>
-            <div class="wa-step-text">
-              Clique no botão abaixo para abrir o WhatsApp já com a mensagem pronta para o CallMeBot:
-              <a id="wa-activate-link" href="#" target="_blank" class="wa-link-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                Abrir WhatsApp e ativar CallMeBot
-              </a>
-              <span class="wa-tip">O número já estará preenchido — é só enviar</span>
-            </div>
-          </div>
-          <div class="wa-step-row">
-            <div class="wa-step-num">2</div>
-            <div class="wa-step-text">Aguarde a resposta do CallMeBot com sua <strong>API Key</strong> e cole abaixo:</div>
-          </div>
+      <!-- STEP 1: Twilio credentials -->
+      <div class="wa-step-content" id="wa-step-1">
+        <div class="wa-step-title">Credenciais Twilio</div>
+        <p class="wa-step-desc">No <a href="https://console.twilio.com" target="_blank" class="wa-link">console.twilio.com</a>, copie o <strong>Account SID</strong> e o <strong>Auth Token</strong> da tela inicial.</p>
+        <div class="form-field">
+          <label>Account SID</label>
+          <input type="text" id="wa-sid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"/>
         </div>
         <div class="form-field">
-          <label>Seu número (DDI + DDD + número, só dígitos)</label>
-          <input type="tel" id="wa-phone" placeholder="Ex: 5531999990000" oninput="updateActivateLink()"/>
+          <label>Auth Token</label>
+          <input type="password" id="wa-token" placeholder="seu auth token"/>
         </div>
         <div class="form-field">
-          <label>API Key recebida pelo CallMeBot</label>
-          <input type="text" id="wa-apikey" placeholder="Ex: 1234567"/>
+          <label>Número do Sandbox Twilio WhatsApp</label>
+          <input type="text" id="wa-from" placeholder="+14155238886"/>
+          <span class="field-hint">Em Messaging → Try it out → Send a WhatsApp message</span>
         </div>
       </div>
 
-      <!-- MANUAL TAB: wa.me link -->
-      <div id="watab-manual" class="hidden">
-        <div class="wa-how">
-          <div class="wa-how-title">✋ Notificação manual — abre o WhatsApp pronto</div>
-          <p style="font-size:13px;color:var(--text2);line-height:1.6">
-            Quando um lembrete disparar, o app abre automaticamente o WhatsApp com a mensagem já escrita. Basta <strong>apertar Enviar</strong>.<br><br>
-            Informe seu número para onde a mensagem será enviada:
-          </p>
+      <!-- STEP 2: Worker URL -->
+      <div class="wa-step-content hidden" id="wa-step-2">
+        <div class="wa-step-title">URL do Cloudflare Worker</div>
+        <p class="wa-step-desc">Faça o deploy do arquivo <code>cloudflare-worker/worker.js</code> (incluído no repositório) e cole a URL aqui. Veja o README para o passo a passo.</p>
+        <div class="form-field">
+          <label>Worker URL</label>
+          <input type="text" id="wa-worker-url" placeholder="https://planner-whatsapp.SEU-USER.workers.dev"/>
         </div>
+        <div class="form-field">
+          <label>App Token (opcional — segurança extra)</label>
+          <input type="text" id="wa-app-token" placeholder="qualquer texto secreto"/>
+          <span class="field-hint">Deve ser o mesmo valor da secret APP_TOKEN no Worker</span>
+        </div>
+      </div>
+
+      <!-- STEP 3: Sandbox join -->
+      <div class="wa-step-content hidden" id="wa-step-3">
+        <div class="wa-step-title">Ativar Sandbox Twilio no seu WhatsApp</div>
+        <p class="wa-step-desc">O Twilio Sandbox exige que você envie uma mensagem de adesão <strong>uma única vez</strong>. Depois disso, as mensagens chegam automaticamente para sempre.</p>
         <div class="form-field">
           <label>Seu número WhatsApp (DDI + DDD + número)</label>
-          <input type="tel" id="wa-phone-manual" placeholder="Ex: 5531999990000"/>
+          <div class="phone-input-wrap">
+            <span class="phone-prefix">+</span>
+            <input type="tel" id="wa-phone" placeholder="5531999990000" inputmode="numeric"/>
+          </div>
+          <span class="field-hint">Exemplo: 5531999990000 → Brasil (55) + DDD (31) + número</span>
         </div>
-        <div class="wa-manual-preview">
-          <div class="wa-how-title">Preview da mensagem</div>
-          <div class="wa-preview-msg">📋 <strong>Lembrete do Planner</strong><br>Reunião de equipe<br>🗓 Hoje às 14:00</div>
+        <div class="wa-sandbox-join" id="wa-sandbox-join">
+          <div class="wa-sandbox-label">Código de adesão do sandbox:</div>
+          <div class="wa-sandbox-code" id="wa-sandbox-code">—</div>
+          <a class="wa-link-btn" id="wa-sandbox-link" href="#" target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Enviar código de adesão agora
+          </a>
+          <span class="field-hint">Abre o WhatsApp com a mensagem pronta — basta tocar Enviar (só uma vez)</span>
         </div>
+      </div>
+
+      <!-- STEP 4: Done + test -->
+      <div class="wa-step-content hidden" id="wa-step-4">
+        <div class="wa-step-title">Tudo configurado! 🎉</div>
+        <p class="wa-step-desc">A partir de agora, quando um lembrete disparar, a mensagem chegará automaticamente no seu WhatsApp — sem abrir o app, sem tocar em nada.</p>
+        <div class="wa-done-preview">
+          <div class="wa-bubble">📋 <strong>Lembrete do Planner</strong><br>Reunião de equipe<br>🗓 Hoje às 14:00</div>
+          <div class="wa-bubble wa-bubble-bday">🎂 <strong>Aniversário hoje!</strong><br>Maria Silva — 35 anos<br>🎉 Não esqueça de parabenizar!</div>
+        </div>
+        <button class="btn-outline" id="btn-test-wa" style="width:100%;justify-content:center;margin-top:4px">📱 Enviar mensagem de teste</button>
+        <div id="wa-test-result" class="hidden" style="margin-top:8px;font-size:13px;padding:8px 12px;border-radius:var(--radius)"></div>
       </div>
 
     </div>
-    <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <button class="btn-outline" id="btn-test-wa">📱 Testar</button>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-cancel" id="wa-back" style="visibility:hidden">← Voltar</button>
       <div style="display:flex;gap:8px">
         <button class="btn-cancel" id="wa-cancel">Fechar</button>
-        <button class="btn-save" id="btn-save-wa">Salvar</button>
+        <button class="btn-save" id="wa-next">Próximo →</button>
       </div>
     </div>
   </div>
